@@ -1,0 +1,16 @@
+{
+  "name": "beautycoastapp",
+  "version": "1.0.0",
+  "description": "Sistema de gestão de estética",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoseGabriel753/minha-agenda-pro.git"
+  },
+  "author": "Jose Gabriel",
+  "license": "ISC"
+}

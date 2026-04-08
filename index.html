@@ -2,14 +2,15 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minha Agenda Pro</title>
     
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#F2F2F7">
+    <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,16 +45,19 @@
         .pay-btn { width: 100%; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; border: 1px solid #ffcccc; background: #fff0f0; color: #ff3b30; }
         .pay-btn.paid { background: #d4f7dc; color: #00c950; border-color: #bbf0c8; }
         
-        .bottom-nav { background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(0,0,0,0.05); }
+        .bottom-nav { background: var(--nav-bg); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border: 1px solid rgba(0,0,0,0.05); }
+        .btn-inverse { background-color: var(--text-main); color: var(--bg-card); }
         .hidden { display: none !important; }
 
         .config-item { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .config-item:last-child { border-bottom: none; }
+        .config-item-heading { padding: 5px 10px !important; border-bottom: none !important; }
         .config-input { text-align: right; background: transparent; border: none; outline: none; color: gray; font-weight: 500; width: 60%; }
         .config-input:focus { color: var(--accent); }
         
         .group-header { padding: 15px 5px 5px 5px; font-size: 11px; font-weight: 900; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
         .sort-select { background: transparent; border: none; font-weight: bold; font-size: 12px; outline: none; text-align: right; color: var(--accent); }
+        .nav-select { -webkit-appearance: none; appearance: none; background: transparent; border: none; outline: none; cursor: pointer; text-align: center; font-family: inherit; color: var(--text-main); }
 
         .historico-container::-webkit-scrollbar { width: 4px; }
         .historico-container::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.1); border-radius: 4px; }
@@ -61,7 +65,7 @@
         #ios-install-prompt {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             width: 90%; max-width: 400px;
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.95); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
             border-radius: 16px; padding: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             z-index: 9999; text-align: center;
@@ -79,9 +83,10 @@
             <div class="flex justify-between items-center mb-6">
                 <p class="text-[10px] font-black text-accent uppercase tracking-[0.2em]">AGENDA</p>
                 <div class="flex gap-2">
-                    <button onclick="cycleColor()" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center text-[var(--accent)]"><i class="fas fa-palette text-xs"></i></button>
-                    <button onclick="toggleDarkMode()" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center text-gray-500"><i id="mode-icon" class="fas fa-moon text-xs"></i></button>
-                    <button onclick="openConfig()" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center text-gray-500"><i class="fas fa-cog text-xs"></i></button>
+                    <button onclick="cycleColor()" aria-label="Alterar cor do tema" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center text-[var(--accent)]"><i class="fas fa-palette text-xs"></i></button>
+                    <button onclick="toggleDarkMode()" aria-label="Alternar modo escuro" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center text-gray-500"><i id="mode-icon" class="fas fa-moon text-xs"></i></button>
+                    <button onclick="openConfig()" aria-label="Abrir configurações" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center text-gray-500"><i class="fas fa-cog text-xs"></i></button>
+                    <button id="btn-logout" onclick="logoutUser()" aria-label="Sair da conta" title="Sair" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center text-red-400 hidden"><i class="fas fa-sign-out-alt text-xs"></i></button>
                 </div>
             </div>
             
@@ -91,13 +96,12 @@
             </div>
             
             <div class="flex items-center justify-between mb-8 px-2">
-                <button onclick="changeMonth(-1)" class="w-10 h-10 rounded-full hover:bg-[var(--input-bg)] flex items-center justify-center text-gray-400"><i class="fas fa-chevron-left"></i></button>
-                <div class="text-center relative cursor-pointer group">
-                    <input type="month" onchange="jumpToDate(this.value)" onclick="try{this.showPicker()}catch(e){}" class="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer">
-                    <h1 class="text-2xl font-black group-hover:opacity-70 transition" id="month-display">Janeiro</h1>
-                    <p class="text-xs font-bold opacity-40 uppercase tracking-widest mt-1" id="year-display">2026</p>
+                <button onclick="changeMonth(-1)" aria-label="Mês anterior" class="w-10 h-10 rounded-full hover:bg-[var(--input-bg)] flex items-center justify-center text-gray-400"><i class="fas fa-chevron-left"></i></button>
+                <div class="text-center flex flex-col items-center">
+                    <select id="select-month" onchange="jumpToSelectDate()" aria-label="Selecionar mês" class="nav-select text-2xl font-black hover:opacity-70 transition"></select>
+                    <select id="select-year" onchange="jumpToSelectDate()" aria-label="Selecionar ano" class="nav-select text-xs font-bold opacity-40 uppercase tracking-widest mt-1"></select>
                 </div>
-                <button onclick="changeMonth(1)" class="w-10 h-10 rounded-full hover:bg-[var(--input-bg)] flex items-center justify-center text-gray-400"><i class="fas fa-chevron-right"></i></button>
+                <button onclick="changeMonth(1)" aria-label="Próximo mês" class="w-10 h-10 rounded-full hover:bg-[var(--input-bg)] flex items-center justify-center text-gray-400"><i class="fas fa-chevron-right"></i></button>
             </div>
 
             <div class="grid grid-cols-7 text-center mb-4 text-[9px] font-bold opacity-40 uppercase">
@@ -109,7 +113,7 @@
         <div id="agenda-container">
             <div id="section-upcoming" class="hidden">
                 <div class="flex items-center gap-3 mb-4 ml-2 mt-6">
-                    <div class="w-1.5 h-1.5 rounded-full" style="background-color: var(--accent)"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-[var(--accent)]"></div>
                     <h2 class="text-lg font-bold">Próximos</h2>
                 </div>
                 <div id="list-upcoming" class="space-y-3"></div>
@@ -129,11 +133,11 @@
     <main id="view-inventory" class="px-5 max-w-md mx-auto space-y-6 hidden">
         <div class="ios-card p-6 flex justify-between items-center bg-gradient-to-r from-[var(--bg-card)] to-[var(--input-bg)]">
             <div><p class="text-[10px] font-black text-accent uppercase tracking-[0.2em]">Gestão</p><h1 class="text-2xl font-black mt-1">Estoque</h1></div>
-            <button onclick="openProductModal()" class="w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-white active:scale-90 transition" style="background-color: var(--accent)"><i class="fas fa-plus text-lg"></i></button>
+            <button onclick="openProductModal()" aria-label="Adicionar produto" class="w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-white active:scale-90 transition bg-[var(--accent)]"><i class="fas fa-plus text-lg"></i></button>
         </div>
         <div class="flex justify-between items-end px-2">
             <div class="flex items-center gap-3"><div class="w-1.5 h-1.5 rounded-full bg-gray-400"></div><h2 class="text-lg font-bold opacity-60">Produtos</h2></div>
-            <select id="sort-inventory" onchange="changeInventorySort(this.value)" class="sort-select">
+            <select id="sort-inventory" onchange="changeInventorySort(this.value)" aria-label="Ordenar produtos" class="sort-select">
                 <option value="brand">Por Marca</option>
                 <option value="status">Por Status</option>
                 <option value="name">Por Nome</option>
@@ -148,7 +152,7 @@
         <div class="ios-card p-5">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xs font-bold uppercase tracking-widest text-[var(--accent)]">Análise Anual</h3>
-                <select id="chart-year-select" onchange="updateChartYear()" class="bg-transparent text-sm font-bold outline-none text-right text-gray-500"></select>
+                <select id="chart-year-select" onchange="updateChartYear()" aria-label="Selecionar ano" class="bg-transparent text-sm font-bold outline-none text-right text-gray-500"></select>
             </div>
             <div class="h-48 w-full"><canvas id="financialChart"></canvas></div>
         </div>
@@ -174,7 +178,7 @@
 
     <main id="view-config" class="px-5 max-w-md mx-auto space-y-6 hidden">
         <div class="flex items-center gap-3 mb-4 mt-2">
-            <button onclick="closeConfig()" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center"><i class="fas fa-arrow-left text-sm"></i></button>
+            <button onclick="closeConfig()" aria-label="Voltar" class="w-8 h-8 rounded-full bg-[var(--input-bg)] flex items-center justify-center"><i class="fas fa-arrow-left text-sm"></i></button>
             <h1 class="text-2xl font-bold">Configurações</h1>
         </div>
 
@@ -194,25 +198,9 @@
 
         <div class="ios-card overflow-hidden">
             <h3 class="text-[10px] font-bold opacity-40 uppercase tracking-widest p-4 pb-2">FINANCEIRO</h3>
-            <div class="config-item"><span class="text-sm font-medium">Valor do Sinal</span><input type="number" id="cfg-signal" class="config-input font-bold" style="color: var(--accent)" placeholder="40"></div>
+            <div class="config-item"><span class="text-sm font-medium">Valor do Sinal</span><input type="number" id="cfg-signal" class="config-input font-bold text-[var(--accent)]" placeholder="40"></div>
         </div>
 
-        <div class="ios-card overflow-hidden bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10">
-            <h3 class="text-[10px] font-bold opacity-40 uppercase tracking-widest p-4 pb-2">DADOS & SEGURANÇA</h3>
-            <div class="p-4 pt-2 flex gap-3">
-                <button onclick="exportData()" class="flex-1 py-3 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-xl text-xs font-bold uppercase shadow-sm active:scale-95 transition">
-                    <i class="fas fa-download mb-1 block text-lg text-[var(--accent)]"></i> Salvar Backup
-                </button>
-                <div class="flex-1 relative">
-                    <input type="file" id="import-file" onchange="importData(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                    <button class="w-full h-full py-3 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/20 rounded-xl text-xs font-bold uppercase shadow-sm active:scale-95 transition pointer-events-none">
-                        <i class="fas fa-upload mb-1 block text-lg text-blue-500"></i> Restaurar
-                    </button>
-                </div>
-            </div>
-            <p class="text-[9px] text-center opacity-40 px-4 pb-4">Faça backup regularmente para não perder seus dados.</p>
-        </div>
-        
         <button onclick="saveSettings()" class="w-full py-4 bg-[var(--accent)] text-white font-bold text-sm rounded-xl shadow-lg mt-4 uppercase tracking-wider">Salvar Alterações</button>
         <p class="text-center text-[10px] opacity-30 mt-4">Versão 5.0 - Genérica</p>
     </main>
@@ -224,34 +212,34 @@
     </div>
 
     <div id="modal-new" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] hidden flex items-end sm:items-center justify-center">
-        <div class="bg-card w-full sm:w-96 p-6 rounded-t-3xl sm:rounded-3xl ios-card shadow-2xl h-[90vh] sm:h-auto overflow-y-auto" style="background-color: var(--bg-card)">
-            <div class="flex justify-between items-center mb-6"><div><span class="text-[10px] font-bold text-accent uppercase">AGENDA</span><h3 class="text-xl font-bold" id="modal-day-display">--</h3></div><button onclick="closeModal('modal-new')" class="w-8 h-8 bg-[var(--input-bg)] rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button></div>
-            <div class="p-5 rounded-2xl mb-6 bg-[var(--bg-body)]"><input type="text" id="inp-guest-name" class="ios-input mb-3" style="background-color: var(--bg-card);" placeholder="Nome Cliente"><div id="modal-services-grid" class="grid grid-cols-2 gap-3 mb-3"></div><button onclick="addGuestToList()" class="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wide transition hover:opacity-80" style="background-color: var(--text-main); color: var(--bg-card);">Incluir</button></div>
+        <div class="bg-card w-full sm:w-96 p-6 rounded-t-3xl sm:rounded-3xl ios-card shadow-2xl h-[90vh] sm:h-auto overflow-y-auto bg-[var(--bg-card)]">
+            <div class="flex justify-between items-center mb-6"><div><span class="text-[10px] font-bold text-accent uppercase">AGENDA</span><h3 class="text-xl font-bold" id="modal-day-display">--</h3></div><button onclick="closeModal('modal-new')" aria-label="Fechar" class="w-8 h-8 bg-[var(--input-bg)] rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button></div>
+            <div class="p-5 rounded-2xl mb-6 bg-[var(--bg-body)]"><input type="text" id="inp-guest-name" aria-label="Nome do cliente" class="ios-input mb-3 bg-[var(--bg-card)]" placeholder="Nome Cliente"><div id="modal-services-grid" class="grid grid-cols-2 gap-3 mb-3"></div><button onclick="addGuestToList()" class="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wide transition hover:opacity-80 btn-inverse">Incluir</button></div>
             <div id="guest-list-container" class="space-y-2 mb-6"></div>
-            <div class="bg-[var(--input-bg)] p-1 rounded-2xl mb-4 border border-[var(--border-color)]"><div class="flex bg-[var(--bg-card)] rounded-xl overflow-hidden shadow-sm"><div class="w-1/2 p-3 border-r border-[var(--border-color)] flex flex-col items-center justify-center"><label class="text-[9px] font-bold opacity-40 uppercase mb-1">Horário</label><input type="time" id="inp-time" class="bg-transparent text-center font-bold text-lg outline-none w-full appearance-none p-0"></div><div class="w-1/2 p-3 flex flex-col items-center justify-center relative"><label class="text-[9px] font-bold opacity-40 uppercase mb-1">Valor Total</label><div class="flex items-center"><span class="text-xs font-bold mr-1 opacity-50">R$</span><input type="number" id="inp-price" class="bg-transparent text-center font-bold text-lg outline-none w-20 p-0 text-[var(--accent)]" placeholder="0"></div></div></div><div class="grid grid-cols-2 gap-3 p-3 pt-4"><button id="btn-sinal" onclick="togglePayState('sinal')" class="pay-btn">Sinal?</button><button id="btn-pago" onclick="togglePayState('pago')" class="pay-btn">Pago Total?</button></div><div class="relative mx-3 mb-3 mt-1"><i class="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i><input type="text" id="inp-address" class="ios-input pl-10 text-sm border border-[var(--border-color)]" style="background-color: var(--bg-card);" placeholder="Endereço (Opcional)"></div></div>
-            <button onclick="saveAppointment()" class="w-full py-4 rounded-xl font-bold text-white shadow-lg text-sm uppercase tracking-wide" style="background-color: var(--accent)">Salvar Agendamento</button>
+            <div class="bg-[var(--input-bg)] p-1 rounded-2xl mb-4 border border-[var(--border-color)]"><div class="flex bg-[var(--bg-card)] rounded-xl overflow-hidden shadow-sm"><div class="w-1/2 p-3 border-r border-[var(--border-color)] flex flex-col items-center justify-center"><label class="text-[9px] font-bold opacity-40 uppercase mb-1">Horário</label><input type="time" id="inp-time" aria-label="Horário do agendamento" class="bg-transparent text-center font-bold text-lg outline-none w-full appearance-none p-0"></div><div class="w-1/2 p-3 flex flex-col items-center justify-center relative"><label class="text-[9px] font-bold opacity-40 uppercase mb-1">Valor Total</label><div class="flex items-center"><span class="text-xs font-bold mr-1 opacity-50">R$</span><input type="number" id="inp-price" aria-label="Valor total do serviço" class="bg-transparent text-center font-bold text-lg outline-none w-20 p-0 text-[var(--accent)]" placeholder="0"></div></div></div><div class="grid grid-cols-2 gap-3 p-3 pt-4"><button id="btn-sinal" onclick="togglePayState('sinal')" class="pay-btn">Sinal?</button><button id="btn-pago" onclick="togglePayState('pago')" class="pay-btn">Pago Total?</button></div><div class="relative mx-3 mb-3 mt-1"><i class="fas fa-map-marker-alt absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i><input type="text" id="inp-address" aria-label="Endereço (opcional)" class="ios-input pl-10 text-sm border border-[var(--border-color)] bg-[var(--bg-card)]" placeholder="Endereço (Opcional)"></div></div>
+            <button onclick="saveAppointment()" class="w-full py-4 rounded-xl font-bold text-white shadow-lg text-sm uppercase tracking-wide bg-[var(--accent)]">Salvar Agendamento</button>
         </div>
     </div>
 
     <div id="modal-product" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] hidden flex items-end sm:items-center justify-center">
-        <div class="bg-card w-full sm:w-96 p-6 rounded-t-3xl sm:rounded-3xl ios-card shadow-2xl" style="background-color: var(--bg-card)">
-            <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold">Novo Produto</h3><button onclick="closeModal('modal-product')" class="w-8 h-8 bg-[var(--input-bg)] rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button></div>
-            <div class="space-y-4"><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">Marca</label><input type="text" id="prod-brand" class="ios-input" placeholder="Ex: Dior, Mac"></div><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">Produto</label><input type="text" id="prod-name" class="ios-input" placeholder="Ex: Base Matte"></div><p class="text-xs text-center opacity-40 mt-2">O produto inicia como "Em Estoque". Toque nele depois para editar.</p><button onclick="saveProduct()" class="w-full py-4 mt-2 rounded-xl font-bold text-white shadow-lg text-sm uppercase tracking-wide" style="background-color: var(--accent)">Cadastrar</button></div>
+        <div class="bg-card w-full sm:w-96 p-6 rounded-t-3xl sm:rounded-3xl ios-card shadow-2xl bg-[var(--bg-card)]">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold">Novo Produto</h3><button onclick="closeModal('modal-product')" aria-label="Fechar" class="w-8 h-8 bg-[var(--input-bg)] rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button></div>
+            <div class="space-y-4"><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">Marca</label><input type="text" id="prod-brand" class="ios-input" placeholder="Ex: Dior, Mac"></div><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">Produto</label><input type="text" id="prod-name" class="ios-input" placeholder="Ex: Base Matte"></div><p class="text-xs text-center opacity-40 mt-2">O produto inicia como "Em Estoque". Toque nele depois para editar.</p><button onclick="saveProduct()" class="w-full py-4 mt-2 rounded-xl font-bold text-white shadow-lg text-sm uppercase tracking-wide bg-[var(--accent)]">Cadastrar</button></div>
         </div>
     </div>
 
     <div id="modal-ficha" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] hidden flex items-end sm:items-center justify-center">
-        <div class="bg-card w-full sm:w-96 p-6 rounded-t-3xl sm:rounded-3xl ios-card shadow-2xl" style="background-color: var(--bg-card)">
-            <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold">Ficha Técnica</h3><button onclick="closeModal('modal-ficha')" class="w-8 h-8 bg-[var(--input-bg)] rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button></div>
+        <div class="bg-card w-full sm:w-96 p-6 rounded-t-3xl sm:rounded-3xl ios-card shadow-2xl bg-[var(--bg-card)]">
+            <div class="flex justify-between items-center mb-6"><h3 class="text-xl font-bold">Ficha Técnica</h3><button onclick="closeModal('modal-ficha')" aria-label="Fechar" class="w-8 h-8 bg-[var(--input-bg)] rounded-full text-gray-500 flex items-center justify-center"><i class="fas fa-times"></i></button></div>
             <p id="ficha-titulo" class="text-center font-bold text-accent mb-4 text-sm uppercase tracking-wider"></p>
-            <div class="space-y-4"><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">Qtd. Estoque</label><input type="number" id="ficha-qtd" class="ios-input" placeholder="0"></div><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">ML / Tamanho</label><input type="text" id="ficha-ml" class="ios-input" placeholder="Ex: 30ml"></div><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">Observações</label><textarea id="ficha-obs" class="ios-input" rows="3" placeholder="Anotações do produto..."></textarea></div><div class="flex gap-3 mt-4"><button onclick="closeModal('modal-ficha')" class="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs uppercase">Cancelar</button><button onclick="saveFicha()" class="flex-1 py-3 text-white rounded-xl font-bold text-xs uppercase shadow-lg" style="background-color: var(--accent)">Salvar Ficha</button></div></div>
+            <div class="space-y-4"><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">Qtd. Estoque</label><input type="number" id="ficha-qtd" class="ios-input" placeholder="0"></div><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">ML / Tamanho</label><input type="text" id="ficha-ml" class="ios-input" placeholder="Ex: 30ml"></div><div><label class="text-[10px] font-bold opacity-50 ml-1 uppercase">Observações</label><textarea id="ficha-obs" class="ios-input" rows="3" placeholder="Anotações do produto..."></textarea></div><div class="flex gap-3 mt-4"><button onclick="closeModal('modal-ficha')" class="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold text-xs uppercase">Cancelar</button><button onclick="saveFicha()" class="flex-1 py-3 text-white rounded-xl font-bold text-xs uppercase shadow-lg bg-[var(--accent)]">Salvar Ficha</button></div></div>
         </div>
     </div>
 
     <nav class="fixed bottom-8 left-1/2 -translate-x-1/2 bottom-nav rounded-full py-3 px-6 w-64 flex justify-between items-center z-50 shadow-2xl">
-        <button onclick="switchTab('financial')" id="tab-financial" class="w-10 opacity-40 hover:opacity-100 transition flex flex-col items-center"><i class="fas fa-chart-pie text-xl mb-1"></i><span class="text-[8px] font-bold uppercase">Fat.</span></button>
-        <button onclick="switchTab('calendar')" id="tab-calendar" class="w-14 h-14 -mt-10 bg-[var(--accent)] rounded-full text-white border-[4px] border-[var(--bg-body)] shadow-lg transform hover:scale-105 transition flex items-center justify-center"><i class="fas fa-calendar-alt text-xl"></i></button>
-        <button onclick="switchTab('inventory')" id="tab-inventory" class="w-10 opacity-40 hover:opacity-100 transition flex flex-col items-center"><i class="fas fa-box-open text-xl mb-1"></i><span class="text-[8px] font-bold uppercase">Estoque</span></button>
+        <button onclick="switchTab('financial')" id="tab-financial" aria-label="Faturamento" class="w-10 opacity-40 hover:opacity-100 transition flex flex-col items-center"><i class="fas fa-chart-pie text-xl mb-1"></i><span class="text-[8px] font-bold uppercase">Fat.</span></button>
+        <button onclick="switchTab('calendar')" id="tab-calendar" aria-label="Agenda" class="w-14 h-14 -mt-10 bg-[var(--accent)] rounded-full text-white border-[4px] border-[var(--bg-body)] shadow-lg transform hover:scale-105 transition flex items-center justify-center"><i class="fas fa-calendar-alt text-xl"></i></button>
+        <button onclick="switchTab('inventory')" id="tab-inventory" aria-label="Estoque" class="w-10 opacity-40 hover:opacity-100 transition flex flex-col items-center"><i class="fas fa-box-open text-xl mb-1"></i><span class="text-[8px] font-bold uppercase">Estoque</span></button>
     </nav>
 
     <script>
@@ -266,25 +254,15 @@
         let editingFichaId = null; let originalName = ""; let originalDesc = ""; let originalAddr = "";
         let financeChart = null; 
 
-        document.addEventListener('DOMContentLoaded', () => { initTheme(); renderCalendar(); loadAppointments(); checkIosInstall(); });
+        document.addEventListener('DOMContentLoaded', () => { initTheme(); initSelectDate(); renderCalendar(); loadAppointments(); checkIosInstall(); });
         function checkIosInstall() { const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const isStandalone = ('standalone' in window.navigator) && (window.navigator.standalone); if (isIos && !isStandalone) setTimeout(() => document.getElementById('ios-install-prompt').classList.remove('hidden'), 2000); }
         function closeIosPrompt() { document.getElementById('ios-install-prompt').classList.add('hidden'); }
-
-        // --- BACKUP E RESTAURAÇÃO ---
-        function exportData() {
-            const data = { appointments: JSON.parse(localStorage.getItem('bc_appointments') || '[]'), products: JSON.parse(localStorage.getItem('bc_products') || '[]'), settings: settings, themeMode: localStorage.getItem('themeMode'), themeIndex: localStorage.getItem('themeIndex') };
-            const blob = new Blob([JSON.stringify(data)], { type: "application/json" }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `backup-agenda-${new Date().toISOString().slice(0,10)}.json`; a.click(); alert("Backup salvo! Guarde este arquivo em um lugar seguro (iCloud, Drive ou WhatsApp).");
-        }
-        function importData(input) {
-            const file = input.files[0]; if (!file) return; const reader = new FileReader();
-            reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if (data.appointments) localStorage.setItem('bc_appointments', JSON.stringify(data.appointments)); if (data.products) localStorage.setItem('bc_products', JSON.stringify(data.products)); if (data.settings) localStorage.setItem('bc_settings', JSON.stringify(data.settings)); if (data.themeMode !== undefined) localStorage.setItem('themeMode', data.themeMode); if (data.themeIndex !== undefined) localStorage.setItem('themeIndex', data.themeIndex); alert("Dados restaurados! Recarregando..."); location.reload(); } catch (err) { alert("Erro no arquivo de backup."); } }; reader.readAsText(file);
-        }
 
         // --- FUNÇÕES DE TEMA E CONFIG ---
         function initTheme() { document.documentElement.setAttribute('data-color', themes[currentThemeIndex]); if(isDark) { document.documentElement.setAttribute('data-mode', 'dark'); document.getElementById('mode-icon').classList.replace('fa-moon', 'fa-sun'); } applySettingsToUI(); document.getElementById('sort-inventory').value = inventorySortMode; }
         function applySettingsToUI() { document.getElementById('header-name').innerText = settings.name; document.getElementById('header-job').innerText = settings.job; }
         function openConfig() { document.getElementById('cfg-name').value = settings.name; document.getElementById('cfg-job').value = settings.job; document.getElementById('cfg-signal').value = settings.signal; renderServicesConfig(); document.getElementById('view-calendar').classList.add('hidden'); document.getElementById('view-config').classList.remove('hidden'); }
-        function renderServicesConfig() { const container = document.getElementById('services-config-container'); container.innerHTML = ''; settings.services.forEach((service, index) => { container.innerHTML += `<div class="bg-gray-50 dark:bg-white/5 p-2 mb-2 rounded border border-transparent hover:border-[var(--accent)] transition relative"><button onclick="deleteServiceConfig(${service.id})" class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash text-xs"></i></button><div class="config-item" style="border:none; padding: 5px 10px;"><label class="text-xs font-bold opacity-50 uppercase">Serviço ${index + 1}</label></div><div class="config-item"><label class="text-sm font-medium">Nome</label><input type="text" class="config-input service-name-input" data-id="${service.id}" value="${service.name}"></div><div class="config-item"><label class="text-sm font-medium">Preço (R$)</label><input type="number" class="config-input config-price service-price-input" data-id="${service.id}" value="${service.price}"></div></div>`; }); }
+        function renderServicesConfig() { const container = document.getElementById('services-config-container'); container.innerHTML = ''; settings.services.forEach((service, index) => { container.innerHTML += `<div class="bg-gray-50 dark:bg-white/5 p-2 mb-2 rounded border border-transparent hover:border-[var(--accent)] transition relative"><button onclick="deleteServiceConfig(${service.id})" class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition"><i class="fas fa-trash text-xs"></i></button><div class="config-item config-item-heading"><label class="text-xs font-bold opacity-50 uppercase">Serviço ${index + 1}</label></div><div class="config-item"><label class="text-sm font-medium">Nome</label><input type="text" class="config-input service-name-input" data-id="${service.id}" value="${service.name}"></div><div class="config-item"><label class="text-sm font-medium">Preço (R$)</label><input type="number" class="config-input config-price service-price-input" data-id="${service.id}" value="${service.price}"></div></div>`; }); }
         function addNewServiceConfig() { settings.services.push({ id: Date.now(), name: "Novo", price: 0 }); localStorage.setItem('bc_settings', JSON.stringify(settings)); renderServicesConfig(); }
         function deleteServiceConfig(id) { if(settings.services.length <= 1) { alert("Mínimo 1 serviço."); return; } if(confirm("Apagar?")) { settings.services = settings.services.filter(s => s.id !== id); localStorage.setItem('bc_settings', JSON.stringify(settings)); renderServicesConfig(); } }
         function saveSettings() { settings.name = document.getElementById('cfg-name').value || "Seu Nome"; settings.job = document.getElementById('cfg-job').value || "Profissional"; settings.signal = parseFloat(document.getElementById('cfg-signal').value) || 0; const nameInputs = document.querySelectorAll('.service-name-input'); const priceInputs = document.querySelectorAll('.service-price-input'); settings.services.forEach(service => { let nInput, pInput; nameInputs.forEach(el => { if(parseInt(el.dataset.id) === service.id) nInput = el; }); priceInputs.forEach(el => { if(parseInt(el.dataset.id) === service.id) pInput = el; }); if(nInput) service.name = nInput.value; if(pInput) service.price = parseFloat(pInput.value) || 0; }); localStorage.setItem('bc_settings', JSON.stringify(settings)); applySettingsToUI(); alert("Salvo!"); closeConfig(); }
@@ -296,8 +274,9 @@
 
         let currentDate = new Date(); let selectedDay = null; let currentGuestServices = []; let fullGuestList = []; let payStatus = { sinal: false, pago: false }; let editingId = null; const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         function changeMonth(s) { currentDate.setMonth(currentDate.getMonth() + s); renderCalendar(); loadAppointments(); }
-        function jumpToDate(val) { if (!val) return; const [y, m] = val.split('-'); currentDate = new Date(parseInt(y), parseInt(m) - 1, 1); renderCalendar(); loadAppointments(); }
-        function renderCalendar() { const y = currentDate.getFullYear(), m = currentDate.getMonth(); document.getElementById('month-display').innerText = months[m]; document.getElementById('year-display').innerText = y; const fd = new Date(y, m, 1).getDay(), dim = new Date(y, m+1, 0).getDate(); const grid = document.getElementById('calendar-grid'); grid.innerHTML = ''; for(let i=0; i<fd; i++) grid.innerHTML += `<div></div>`; for(let i=1; i<=dim; i++) { let c = 'calendar-day'; const now = new Date(); if(i===now.getDate() && m===now.getMonth() && y===now.getFullYear()) c += ' active'; grid.innerHTML += `<div class="${c}" onclick="openModal(${i})">${i}</div>`; } }
+        function initSelectDate() { const ms = document.getElementById('select-month'), ys = document.getElementById('select-year'); ms.innerHTML = months.map((n,i) => `<option value="${i}">${n}</option>`).join(''); const cur = currentDate.getFullYear(); for(let y = cur - 3; y <= cur + 3; y++) ys.innerHTML += `<option value="${y}">${y}</option>`; ms.value = currentDate.getMonth(); ys.value = cur; }
+        function jumpToSelectDate() { const m = parseInt(document.getElementById('select-month').value), y = parseInt(document.getElementById('select-year').value); currentDate = new Date(y, m, 1); renderCalendar(); loadAppointments(); }
+        function renderCalendar() { const y = currentDate.getFullYear(), m = currentDate.getMonth(); document.getElementById('select-month').value = m; document.getElementById('select-year').value = y; const fd = new Date(y, m, 1).getDay(), dim = new Date(y, m+1, 0).getDate(); const grid = document.getElementById('calendar-grid'); grid.innerHTML = ''; for(let i=0; i<fd; i++) grid.innerHTML += `<div></div>`; for(let i=1; i<=dim; i++) { let c = 'calendar-day'; const now = new Date(); if(i===now.getDate() && m===now.getMonth() && y===now.getFullYear()) c += ' active'; grid.innerHTML += `<div class="${c}" onclick="openModal(${i})">${i}</div>`; } }
         function renderServiceButtons() { const grid = document.getElementById('modal-services-grid'); grid.innerHTML = ''; settings.services.forEach(service => { const btn = document.createElement('button'); const isSelected = currentGuestServices.includes(service.name); btn.className = `service-btn ${isSelected ? 'selected' : ''}`; btn.style.backgroundColor = "var(--bg-card)"; btn.onclick = () => toggleService(service.id); btn.innerHTML = `<div class="flex flex-col"><span><i class="fas fa-tag mr-1"></i> ${service.name}</span><span class="text-[9px] font-bold opacity-50">R$ ${service.price}</span></div>`; btn.dataset.serviceId = service.id; grid.appendChild(btn); }); }
         function openModal(day) { selectedDay = day; editingId = null; originalName = ""; originalDesc = ""; originalAddr = ""; document.getElementById('modal-day-display').innerText = `${day} de ${months[currentDate.getMonth()]}`; fullGuestList = []; resetGuestInput(); updateGuestListUI(); renderServiceButtons(); document.getElementById('inp-price').value = ''; document.getElementById('inp-time').value = '14:00'; document.getElementById('inp-address').value = ''; payStatus = { sinal: false, pago: false }; updatePayButtons(); document.getElementById('modal-new').classList.remove('hidden'); }
         function editAppointment(app) { selectedDay = new Date(app.dateTime).getDate(); editingId = app.id; originalName = app.clientName; originalDesc = app.serviceType; originalAddr = app.address || ""; document.getElementById('modal-day-display').innerText = "Editar " + app.clientName.split('+')[0]; const d = new Date(app.dateTime); document.getElementById('inp-time').value = d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); document.getElementById('inp-price').value = app.price; document.getElementById('inp-address').value = app.address || ""; payStatus = { sinal: app.status==='Sinal', pago: app.status==='Pago' }; updatePayButtons(); fullGuestList = []; if(app.serviceType) { const entries = app.serviceType.split(', '); entries.forEach(entry => { const namePart = entry.split(' (')[0]; const servicePart = entry.split(' (')[1] ? entry.split(' (')[1].replace(')', '') : ''; const services = servicePart.split('+'); fullGuestList.push({ name: namePart, services: services }); }); } resetGuestInput(); updateGuestListUI(); renderServiceButtons(); document.getElementById('modal-new').classList.remove('hidden'); }
@@ -388,5 +367,9 @@
             financeChart = new Chart(ctx, { type: 'bar', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], datasets: [{ label: 'Faturamento', data: dataValues, backgroundColor: accentColor, borderRadius: 4, barThickness: 12 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } } } });
         }
     </script>
+
+    <!-- Auth modal mount point -->
+    <div id="auth-modal-container"></div>
+    <script src="js/auth-modal.js"></script>
 </body>
 </html>
