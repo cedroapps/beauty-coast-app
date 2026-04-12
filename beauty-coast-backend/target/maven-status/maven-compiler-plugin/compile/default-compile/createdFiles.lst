@@ -1,0 +1,4 @@
+com\beautycoast\controller\AppointmentController.class
+com\beautycoast\repository\AppointmentRepository.class
+com\beautycoast\model\Appointment.class
+com\beautycoast\BeautyCoastBackendApplication.class
