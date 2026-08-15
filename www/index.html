@@ -29,25 +29,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script> tailwind.config = { darkMode: ['class', '[data-mode="dark"]'] } </script>
-    <!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyD3J6dYitKBESGCr2f0uSw1T30akg96UOI",
-    authDomain: "agenda-beauty-58b31.firebaseapp.com",
-    projectId: "agenda-beauty-58b31",
-    storageBucket: "agenda-beauty-58b31.appspot.com",
-    messagingSenderId: "302320173631",
-    appId: "1:302320173631:web:ba77b140734e181b07ee8a",
-    measurementId: "G-2GM2S15L6S"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-  console.log("Firebase conectado com sucesso!", app);
-</script>
+        <!-- Firebase Auth + Firestore -->
+        <script type="module" src="js/firebase-data.js"></script>
     <style>
         :root { --bg-body: #F2F2F7; --bg-card: #FFFFFF; --text-main: #000000; --input-bg: #F2F2F7; --accent: #D4AF37; --accent-soft: #F9F5E6; --nav-bg: rgba(255, 255, 255, 0.9); --border-color: #E5E5EA; }
         [data-mode="dark"] { --bg-body: #000000; --bg-card: #1C1C1E; --text-main: #FFFFFF; --input-bg: #2C2C2E; --accent: #D4AF37; --accent-soft: #2C2C2E; --nav-bg: rgba(28, 28, 30, 0.85); --border-color: #38383A; }
@@ -303,6 +286,11 @@
     </nav>
 
     <script>
+        const localStorage = {
+            getItem: key => window.userDataStore?.getItem(key) ?? null,
+            setItem: (key, value) => window.userDataStore?.setItem(key, value),
+        };
+
         // --- DADOS GERAIS ---
         let currentTab = 'calendar';
         let isDark = localStorage.getItem('themeMode') === 'true';
@@ -315,8 +303,43 @@
         let settings = getStoredJSON('bc_settings', defaultSettings);
         let editingFichaId = null; let originalName = ""; let originalDesc = ""; let originalAddr = "";
         let financeChart = null; 
+        let userDataInitialized = false;
 
-        document.addEventListener('DOMContentLoaded', () => { initTheme(); initSelectDate(); renderCalendar(); loadAppointments(); checkIosInstall(); requestNotificationPermissions(); });
+        document.addEventListener('DOMContentLoaded', () => { checkIosInstall(); requestNotificationPermissions(); });
+        window.addEventListener('user-data-ready', () => {
+            isDark = localStorage.getItem('themeMode') === 'true';
+            currentThemeIndex = parseInt(localStorage.getItem('themeIndex') || '0');
+            inventorySortMode = localStorage.getItem('bc_inv_sort') || 'brand';
+            settings = getStoredJSON('bc_settings', defaultSettings);
+            initTheme();
+            if (!userDataInitialized) initSelectDate();
+            renderCalendar();
+            loadAppointments();
+            loadProducts();
+            if (!userDataInitialized) {
+                userDataInitialized = true;
+                setTimeout(() => window.startOnboarding?.(), 350);
+            }
+        });
+        window.addEventListener('user-data-cleared', () => {
+            userDataInitialized = false;
+            settings = { ...defaultSettings, services: [...defaultSettings.services] };
+            isDark = false;
+            currentThemeIndex = 0;
+            inventorySortMode = 'brand';
+            currentGuestServices = [];
+            fullGuestList = [];
+            document.documentElement.removeAttribute('data-mode');
+            document.documentElement.setAttribute('data-color', themes[currentThemeIndex]);
+            applySettingsToUI();
+            document.getElementById('list-upcoming').innerHTML = '';
+            document.getElementById('list-past').innerHTML = '';
+            document.getElementById('product-list').innerHTML = '';
+            document.querySelectorAll('.calendar-day').forEach(day => day.classList.remove('has-appointment'));
+            document.getElementById('section-upcoming').classList.add('hidden');
+            document.getElementById('section-past').classList.add('hidden');
+            document.getElementById('msg-empty').classList.remove('hidden');
+        });
         function checkIosInstall() { const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const isStandalone = ('standalone' in window.navigator) && (window.navigator.standalone); if (isIos && !isStandalone) setTimeout(() => document.getElementById('ios-install-prompt').classList.remove('hidden'), 2000); }
         function closeIosPrompt() { document.getElementById('ios-install-prompt').classList.add('hidden'); }
 
@@ -347,7 +370,7 @@
         let onboardingStep = 0;
 
         function startOnboarding() {
-            if (localStorage.getItem('bc_onboarding_completed') === 'true') return;
+            if (localStorage.getItem('bc_onboarding_completed') === 'true' || !document.getElementById('onboarding-overlay').classList.contains('hidden')) return;
             onboardingStep = 0;
             document.getElementById('onboarding-overlay').classList.remove('hidden');
             showOnboardingStep();

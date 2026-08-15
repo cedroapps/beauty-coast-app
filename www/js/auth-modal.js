@@ -223,11 +223,23 @@ function switchAuthTab(mode) {
 // ----------------------------------------------------------------
 // 6. Auth handlers — Integrado com Firebase Auth Real
 // ----------------------------------------------------------------
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const auth = getAuth(); // Usa a instância do Firebase já inicializada no index.html
 const googleProvider = new GoogleAuthProvider();
 let pendingGoogleCredential = null;
+
+onAuthStateChanged(auth, user => {
+    if (user) {
+        _onLoginSuccess(user);
+        return;
+    }
+
+    isLoggedIn = false;
+    currentUser = null;
+    _updateHeaderUI();
+    showAuthModal();
+});
 
 async function handleEmailLogin() {
     const email    = (document.getElementById('auth-email')?.value ?? '').trim();
@@ -240,8 +252,7 @@ async function handleEmailLogin() {
     errorEl.textContent = '';
 
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        _onLoginSuccess(userCredential.user);
+        await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
         errorEl.textContent = _firebaseErrorMsg(err.code);
     }
@@ -260,8 +271,7 @@ async function handleEmailRegister() {
     errorEl.textContent = '';
 
     try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        _onLoginSuccess(userCredential.user);
+        await createUserWithEmailAndPassword(auth, email, password);
     } catch (err) {
         errorEl.textContent = _firebaseErrorMsg(err.code);
     }
@@ -269,8 +279,7 @@ async function handleEmailRegister() {
 
 async function handleGoogleLogin() {
     try {
-        const result = await signInWithPopup(auth, googleProvider);
-        _onLoginSuccess(result.user);
+        await signInWithPopup(auth, googleProvider);
     } catch (err) {
         if (err.code === 'auth/account-exists-with-different-credential') {
             pendingGoogleCredential = GoogleAuthProvider.credentialFromError(err);
@@ -294,15 +303,11 @@ function _onLoginSuccess(user) {
     hideAuthModal();
     _updateHeaderUI();
     showToast(`Bem-vindo(a), ${user.displayName || user.email}!`, 'success');
-    setTimeout(() => window.startOnboarding?.(), 350);
 }
 
 function logoutUser() {
     if (!confirm('Deseja sair da sua conta?')) return;
-    isLoggedIn  = false;
-    currentUser = null;
-    _updateHeaderUI();
-    showAuthModal();
+    signOut(auth).catch(error => showToast(_firebaseErrorMsg(error.code), 'error'));
 }
 
 function _updateHeaderUI() {
@@ -351,7 +356,6 @@ function _firebaseErrorMsg(code) {
 // ----------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
     _buildToastContainer();
-    if (!isLoggedIn) showAuthModal();
 });
 
 Object.assign(window, {
