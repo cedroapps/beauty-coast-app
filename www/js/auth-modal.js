@@ -221,9 +221,15 @@ function switchAuthTab(mode) {
 }
 
 // ----------------------------------------------------------------
-// 6. Auth handlers  (simulated — replace with Firebase SDK calls)
+// 6. Auth handlers — Integrado com Firebase Auth Real
 // ----------------------------------------------------------------
-function handleEmailLogin() {
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+const auth = getAuth(); // Usa a instância do Firebase já inicializada no index.html
+const googleProvider = new GoogleAuthProvider();
+let pendingGoogleCredential = null;
+
+async function handleEmailLogin() {
     const email    = (document.getElementById('auth-email')?.value ?? '').trim();
     const password = document.getElementById('auth-password')?.value ?? '';
     const errorEl  = document.getElementById('auth-login-error');
@@ -233,45 +239,50 @@ function handleEmailLogin() {
     if (password.length < 6)   { errorEl.textContent = 'Senha com mínimo de 6 caracteres.'; return; }
     errorEl.textContent = '';
 
-    // ── TODO: Firebase ──────────────────────────────────────────────────────
-    // import { signInWithEmailAndPassword } from 'firebase/auth';
-    // signInWithEmailAndPassword(auth, email, password)
-    //   .then(cred => _onLoginSuccess(cred.user))
-    //   .catch(err => errorEl.textContent = _firebaseErrorMsg(err.code));
-    // ────────────────────────────────────────────────────────────────────────
-    _onLoginSuccess({ email, displayName: email.split('@')[0] });
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        _onLoginSuccess(userCredential.user);
+    } catch (err) {
+        errorEl.textContent = _firebaseErrorMsg(err.code);
+    }
 }
 
-function handleEmailRegister() {
+async function handleEmailRegister() {
     const email    = (document.getElementById('auth-reg-email')?.value ?? '').trim();
     const password = document.getElementById('auth-reg-password')?.value ?? '';
     const confirm  = document.getElementById('auth-reg-confirm')?.value ?? '';
     const errorEl  = document.getElementById('auth-register-error');
 
     if (!email || !password || !confirm) { errorEl.textContent = 'Preencha todos os campos.'; return; }
-    if (!_isValidEmail(email))           { errorEl.textContent = 'E-mail inválido.'; return; }
-    if (password.length < 6)             { errorEl.textContent = 'Senha com mínimo de 6 caracteres.'; return; }
-    if (password !== confirm)            { errorEl.textContent = 'As senhas não coincidem.'; return; }
+    if (!_isValidEmail(email))          { errorEl.textContent = 'E-mail inválido.'; return; }
+    if (password.length < 6)            { errorEl.textContent = 'Senha com mínimo de 6 caracteres.'; return; }
+    if (password !== confirm)           { errorEl.textContent = 'As senhas não coincidem.'; return; }
     errorEl.textContent = '';
 
-    // ── TODO: Firebase ──────────────────────────────────────────────────────
-    // import { createUserWithEmailAndPassword } from 'firebase/auth';
-    // createUserWithEmailAndPassword(auth, email, password)
-    //   .then(cred => _onLoginSuccess(cred.user))
-    //   .catch(err => errorEl.textContent = _firebaseErrorMsg(err.code));
-    // ────────────────────────────────────────────────────────────────────────
-    _onLoginSuccess({ email, displayName: email.split('@')[0] });
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        _onLoginSuccess(userCredential.user);
+    } catch (err) {
+        errorEl.textContent = _firebaseErrorMsg(err.code);
+    }
 }
 
-function handleGoogleLogin() {
-    // ── TODO: Firebase ──────────────────────────────────────────────────────
-    // import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-    // const provider = new GoogleAuthProvider();
-    // signInWithPopup(auth, provider)
-    //   .then(result => _onLoginSuccess(result.user))
-    //   .catch(err   => console.error(err));
-    // ────────────────────────────────────────────────────────────────────────
-    _onLoginSuccess({ email: 'usuario@gmail.com', displayName: 'Usuário Google' });
+async function handleGoogleLogin() {
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        _onLoginSuccess(result.user);
+    } catch (err) {
+        if (err.code === 'auth/account-exists-with-different-credential') {
+            pendingGoogleCredential = GoogleAuthProvider.credentialFromError(err);
+            switchAuthTab('login');
+            document.getElementById('auth-login-error').textContent =
+                'Esta conta já existe. Entre com seu e-mail e senha para vincular o acesso pelo Google.';
+            return;
+        }
+
+        console.error('Erro no login com Google:', err);
+        showToast(_firebaseErrorMsg(err.code), 'error');
+    }
 }
 
 // ----------------------------------------------------------------
@@ -283,6 +294,7 @@ function _onLoginSuccess(user) {
     hideAuthModal();
     _updateHeaderUI();
     showToast(`Bem-vindo(a), ${user.displayName || user.email}!`, 'success');
+    setTimeout(() => window.startOnboarding?.(), 350);
 }
 
 function logoutUser() {
@@ -291,10 +303,6 @@ function logoutUser() {
     currentUser = null;
     _updateHeaderUI();
     showAuthModal();
-    // ── TODO: Firebase ──────────────────────────────────────────────────────
-    // import { signOut } from 'firebase/auth';
-    // signOut(auth);
-    // ────────────────────────────────────────────────────────────────────────
 }
 
 function _updateHeaderUI() {
@@ -344,4 +352,12 @@ function _firebaseErrorMsg(code) {
 document.addEventListener('DOMContentLoaded', () => {
     _buildToastContainer();
     if (!isLoggedIn) showAuthModal();
+});
+
+Object.assign(window, {
+    switchAuthTab,
+    handleEmailLogin,
+    handleEmailRegister,
+    handleGoogleLogin,
+    logoutUser,
 });
