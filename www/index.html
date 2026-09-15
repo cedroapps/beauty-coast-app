@@ -404,7 +404,7 @@
         const onboardingSteps = [
             { message: 'Diga seu nome!', target: '#cfg-name', enter: openConfig },
             { message: 'Qual sua profissão?', target: '#cfg-job' },
-            { message: 'Qual serviço você presta? Fique tranquilo, você pode adicionar mais serviços depois.', target: '#services-config-container', enter: () => { onboardingServicePreview = true; openConfig(); } },
+            { message: 'Qual serviço você presta? Fique tranquilo, você pode adicionar mais serviços depois.', target: '#services-config-container', enter: () => { saveSettings(true); onboardingServicePreview = true; openConfig(); } },
             { message: 'Vamos aprender a agendar! Clique em qualquer dia do calendário para testar.', target: '#calendar-grid', waitForDay: true, enter: () => { onboardingServicePreview = false; saveSettings(true); closeConfig(); switchTab('calendar'); } },
             { message: 'Agora escreve o nome da cliente ou selecione o serviço. Você pode alterar o valor se quiser, escolha o horário e endereço se quiser.', target: '#inp-guest-name' },
             { message: 'Pronto, certinho! Aprendeu a agendar.', target: "button[onclick=\"saveAppointment()\"]" },
