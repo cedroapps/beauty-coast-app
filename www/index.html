@@ -481,21 +481,18 @@
             }
         }
 
-        function nextOnboardingStep() {
-            if (onboardingSteps[onboardingStep].waitForDay) return;
+        function nextOnboardingStep(force = false) {
+            if (!force && onboardingSteps[onboardingStep].waitForDay) return;
             if (onboardingStep === onboardingSteps.length - 1) { finishOnboarding(); return; }
             onboardingStep += 1;
             showOnboardingStep();
         }
 
         function completeOnboardingDaySelection() {
+            clearActiveOnboardingTarget();
             if (!document.getElementById('onboarding-overlay').classList.contains('hidden') && onboardingSteps[onboardingStep]?.waitForDay) {
-                // Remove o destaque do dia imediatamente, antes do modal abrir
-                clearActiveOnboardingTarget();
-                // Aguarda a animação de abertura do modal antes de avançar e reposicionar o balão
                 setTimeout(() => {
-                    onboardingStep += 1;
-                    showOnboardingStep();
+                    nextOnboardingStep(true);
                 }, 600);
             }
         }
