@@ -291,15 +291,18 @@
     </nav>
 
     <script>
-        const userStore = window.userDataStore || {
-            getItem: () => null,
-            setItem: () => {},
-            clear: () => {},
-        };
+        // auth-modal.js define window.userDataStore depois deste script (module deferred), então resolvemos em cada chamada em vez de fixar a referência uma única vez
+        function getUserStore() {
+            return window.userDataStore || {
+                getItem: () => null,
+                setItem: () => {},
+                clear: () => {},
+            };
+        }
         const localStorage = {
-            getItem: key => userStore.getItem(key) ?? null,
-            setItem: (key, value) => userStore.setItem(key, value),
-            clear: () => userStore.clear?.(),
+            getItem: key => getUserStore().getItem(key) ?? null,
+            setItem: (key, value) => getUserStore().setItem(key, value),
+            clear: () => getUserStore().clear?.(),
         };
 
         // --- DADOS GERAIS ---
