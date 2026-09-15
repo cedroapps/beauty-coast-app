@@ -221,23 +221,177 @@ function switchAuthTab(mode) {
 }
 
 // ----------------------------------------------------------------
-// 6. Auth handlers — Integrado com Firebase Auth Real
+// 6. Firestore-backed user state
+// ----------------------------------------------------------------
+const firestoreState = {
+    uid: null,
+    cache: new Map(),
+};
+
+const USER_COLLECTIONS = {
+    bc_appointments: 'appointments',
+    bc_products: 'products',
+};
+
+function getCurrentAuth() {
+    return window.firebaseAuth || null;
+}
+
+function getCurrentDb() {
+    return window.firebaseDB || null;
+}
+
+function readUserValue(key, fallback = null) {
+    const value = firestoreState.cache.get(key);
+    if (value === undefined) return fallback;
+    return value;
+}
+
+function writeUserValue(key, value) {
+    firestoreState.cache.set(key, value);
+}
+
+async function persistUserSettings() {
+    const db = getCurrentDb();
+    const uid = firestoreState.uid;
+    if (!db || !uid) return;
+
+    const currentSettings = (() => {
+        const raw = readUserValue('bc_settings', '{}');
+        try { return JSON.parse(raw); } catch { return {}; }
+    })();
+
+    const profile = {
+        ...currentSettings,
+        name: currentSettings.name || 'Seu Nome',
+        job: currentSettings.job || 'Profissional',
+        signal: Number(currentSettings.signal || 0),
+        services: Array.isArray(currentSettings.services)
+            ? currentSettings.services
+            : [{ id: 1, name: 'Serviço 1', price: 100 }, { id: 2, name: 'Serviço 2', price: 50 }],
+        themeMode: String(readUserValue('themeMode', 'false')) === 'true',
+        themeIndex: Number(readUserValue('themeIndex', '0') || 0),
+        inventorySortMode: readUserValue('bc_inv_sort', 'brand'),
+        onboardingCompleted: String(readUserValue('bc_onboarding_completed', 'false')) === 'true',
+    };
+
+    await setDoc(doc(db, 'users', uid, 'settings', 'profile'), profile);
+}
+
+async function syncCollectionWithFirestore(collectionKey, rawValue) {
+    const db = getCurrentDb();
+    const uid = firestoreState.uid;
+    if (!db || !uid) return;
+
+    const collectionName = USER_COLLECTIONS[collectionKey];
+    if (!collectionName) return;
+
+    const records = rawValue ? JSON.parse(rawValue) : [];
+    const ref = collection(db, 'users', uid, collectionName);
+    const snapshot = await getDocs(ref);
+    const batch = writeBatch(db);
+    const incomingIds = new Set(records.map(item => String(item.id)));
+
+    snapshot.forEach(docSnap => {
+        if (!incomingIds.has(docSnap.id)) batch.delete(docSnap.ref);
+    });
+
+    records.forEach(item => {
+        batch.set(doc(ref, String(item.id)), item);
+    });
+
+    await batch.commit();
+    writeUserValue(collectionKey, JSON.stringify(records));
+}
+
+window.userDataStore = {
+    getItem(key) {
+        if (!firestoreState.uid) return null;
+        return readUserValue(key, null);
+    },
+    setItem(key, value) {
+        const normalizedValue = String(value);
+        writeUserValue(key, normalizedValue);
+
+        if (key === 'bc_settings') {
+            persistUserSettings().catch(error => console.error('Firestore settings error:', error));
+            return;
+        }
+
+        if (USER_COLLECTIONS[key]) {
+            syncCollectionWithFirestore(key, normalizedValue).catch(error => console.error('Firestore collection error:', error));
+            return;
+        }
+
+        if (['themeMode', 'themeIndex', 'bc_inv_sort', 'bc_onboarding_completed'].includes(key)) {
+            persistUserSettings().catch(error => console.error('Firestore settings error:', error));
+        }
+    },
+    clear() {
+        firestoreState.cache.clear();
+        firestoreState.uid = null;
+        window.dispatchEvent(new CustomEvent('user-data-cleared'));
+    },
+};
+
+async function hydrateUserStore(user) {
+    const db = getCurrentDb();
+    const uid = user?.uid;
+    if (!db || !uid) return;
+
+    firestoreState.uid = uid;
+    firestoreState.cache.clear();
+
+    const settingsRef = doc(db, 'users', uid, 'settings', 'profile');
+    const settingsSnap = await getDoc(settingsRef);
+    if (settingsSnap.exists()) {
+        const data = settingsSnap.data();
+        writeUserValue('bc_settings', JSON.stringify({
+            name: data.name || 'Seu Nome',
+            job: data.job || 'Profissional',
+            signal: Number(data.signal || 0),
+            services: Array.isArray(data.services)
+                ? data.services
+                : [{ id: 1, name: 'Serviço 1', price: 100 }, { id: 2, name: 'Serviço 2', price: 50 }],
+        }));
+        writeUserValue('themeMode', String(Boolean(data.themeMode)));
+        writeUserValue('themeIndex', String(Number(data.themeIndex || 0)));
+        writeUserValue('bc_inv_sort', data.inventorySortMode || 'brand');
+        writeUserValue('bc_onboarding_completed', String(Boolean(data.onboardingCompleted)));
+    }
+
+    for (const [key, collectionName] of Object.entries(USER_COLLECTIONS)) {
+        const collectionRef = collection(db, 'users', uid, collectionName);
+        const snapshot = await getDocs(collectionRef);
+        writeUserValue(key, JSON.stringify(snapshot.docs.map(item => item.data())));
+    }
+
+    window.dispatchEvent(new CustomEvent('user-data-ready', { detail: { user } }));
+}
+
+// ----------------------------------------------------------------
+// 7. Auth handlers — Integrado com Firebase Auth Real
 // ----------------------------------------------------------------
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { doc, collection, getDoc, getDocs, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const auth = getAuth(); // Usa a instância do Firebase já inicializada no index.html
+const auth = getCurrentAuth() || getAuth();
 const googleProvider = new GoogleAuthProvider();
 let pendingGoogleCredential = null;
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
     if (user) {
+        await hydrateUserStore(user);
         _onLoginSuccess(user);
         return;
     }
 
     isLoggedIn = false;
     currentUser = null;
+    firestoreState.uid = null;
+    firestoreState.cache.clear();
     _updateHeaderUI();
+    window.dispatchEvent(new CustomEvent('user-data-cleared'));
     showAuthModal();
 });
 
@@ -307,6 +461,9 @@ function _onLoginSuccess(user) {
 
 function logoutUser() {
     if (!confirm('Deseja sair da sua conta?')) return;
+    firestoreState.cache.clear();
+    firestoreState.uid = null;
+    localStorage.clear?.();
     signOut(auth).catch(error => showToast(_firebaseErrorMsg(error.code), 'error'));
 }
 

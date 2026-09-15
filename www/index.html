@@ -286,9 +286,15 @@
     </nav>
 
     <script>
+        const userStore = window.userDataStore || {
+            getItem: () => null,
+            setItem: () => {},
+            clear: () => {},
+        };
         const localStorage = {
-            getItem: key => window.userDataStore?.getItem(key) ?? null,
-            setItem: (key, value) => window.userDataStore?.setItem(key, value),
+            getItem: key => userStore.getItem(key) ?? null,
+            setItem: (key, value) => userStore.setItem(key, value),
+            clear: () => userStore.clear?.(),
         };
 
         // --- DADOS GERAIS ---
@@ -305,7 +311,14 @@
         let financeChart = null; 
         let userDataInitialized = false;
 
-        document.addEventListener('DOMContentLoaded', () => { checkIosInstall(); requestNotificationPermissions(); });
+        document.addEventListener('DOMContentLoaded', () => {
+            checkIosInstall();
+            requestNotificationPermissions();
+            document.getElementById('view-calendar').classList.add('hidden');
+            document.getElementById('view-inventory').classList.add('hidden');
+            document.getElementById('view-financial').classList.add('hidden');
+            document.getElementById('view-config').classList.add('hidden');
+        });
         window.addEventListener('user-data-ready', () => {
             isDark = localStorage.getItem('themeMode') === 'true';
             currentThemeIndex = parseInt(localStorage.getItem('themeIndex') || '0');
@@ -316,6 +329,7 @@
             renderCalendar();
             loadAppointments();
             loadProducts();
+            document.getElementById('view-calendar').classList.remove('hidden');
             if (!userDataInitialized) {
                 userDataInitialized = true;
                 setTimeout(() => window.startOnboarding?.(), 350);
@@ -339,6 +353,8 @@
             document.getElementById('section-upcoming').classList.add('hidden');
             document.getElementById('section-past').classList.add('hidden');
             document.getElementById('msg-empty').classList.remove('hidden');
+            ['view-calendar', 'view-inventory', 'view-financial', 'view-config'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            if (window.showAuthModal) window.showAuthModal();
         });
         function checkIosInstall() { const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; const isStandalone = ('standalone' in window.navigator) && (window.navigator.standalone); if (isIos && !isStandalone) setTimeout(() => document.getElementById('ios-install-prompt').classList.remove('hidden'), 2000); }
         function closeIosPrompt() { document.getElementById('ios-install-prompt').classList.add('hidden'); }
