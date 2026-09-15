@@ -312,6 +312,25 @@
         let financeChart = null; 
         let userDataInitialized = false;
 
+        // Placeholders padrão que não devem se misturar com o texto digitado pelo usuário
+        const AUTO_CLEAR_DEFAULT_VALUES = ['Seu Nome', 'Profissional', 'Serviço 1', 'Serviço 2', '0'];
+        document.addEventListener('focusin', e => {
+            const el = e.target;
+            if (!el.matches || !el.matches('input, textarea')) return;
+            if (AUTO_CLEAR_DEFAULT_VALUES.includes(el.value)) {
+                el.dataset.autoClearedValue = el.value;
+                el.value = '';
+            }
+        });
+        document.addEventListener('focusout', e => {
+            const el = e.target;
+            if (!el.matches || !el.matches('input, textarea')) return;
+            if (el.value === '' && el.dataset.autoClearedValue) {
+                el.value = el.dataset.autoClearedValue;
+            }
+            delete el.dataset.autoClearedValue;
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             checkIosInstall();
             requestNotificationPermissions();
@@ -442,7 +461,11 @@
             target.classList.add('onboarding-target-active');
             activeOnboardingTarget = target;
             if (!step.waitForDay) {
-                activeOnboardingTargetHandler = e => { if (e.target === target) nextOnboardingStep(); };
+                activeOnboardingTargetHandler = e => {
+                    const clickedEl = e.target;
+                    if (clickedEl.tagName === 'INPUT' || clickedEl.tagName === 'TEXTAREA') return;
+                    if (clickedEl === target) nextOnboardingStep();
+                };
                 target.addEventListener('click', activeOnboardingTargetHandler);
             }
         }
@@ -456,8 +479,11 @@
 
         function completeOnboardingDaySelection() {
             if (!document.getElementById('onboarding-overlay').classList.contains('hidden') && onboardingSteps[onboardingStep]?.waitForDay) {
-                onboardingStep += 1;
-                showOnboardingStep();
+                // Aguarda a animação de abertura do modal antes de reposicionar o balão
+                setTimeout(() => {
+                    onboardingStep += 1;
+                    showOnboardingStep();
+                }, 400);
             }
         }
 
