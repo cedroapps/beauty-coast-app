@@ -83,6 +83,7 @@
         .onboarding-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
         .onboarding-next { padding: 11px 19px; border: 0; border-radius: 999px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; cursor: pointer; }
         .onboarding-target-active { position: relative !important; z-index: 9999 !important; pointer-events: auto !important; }
+        #modal-new { z-index: 9999; }
         [data-mode="dark"] #onboarding-card { background: #1c1c1e; border-color: rgba(255,255,255,.18); }
 
         .config-item { padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
@@ -404,7 +405,7 @@
             { message: 'Diga seu nome!', target: '#cfg-name', enter: openConfig },
             { message: 'Qual sua profissão?', target: '#cfg-job' },
             { message: 'Qual serviço você presta? Fique tranquilo, você pode adicionar mais serviços depois.', target: '#services-config-container', enter: () => { onboardingServicePreview = true; openConfig(); } },
-            { message: 'Vamos aprender a agendar! Clique em qualquer dia do calendário para testar.', target: '#calendar-grid', waitForDay: true, enter: () => { onboardingServicePreview = false; closeConfig(); switchTab('calendar'); } },
+            { message: 'Vamos aprender a agendar! Clique em qualquer dia do calendário para testar.', target: '#calendar-grid', waitForDay: true, enter: () => { onboardingServicePreview = false; saveSettings(true); closeConfig(); switchTab('calendar'); } },
             { message: 'Agora escreve o nome da cliente ou selecione o serviço. Você pode alterar o valor se quiser, escolha o horário e endereço se quiser.', target: '#inp-guest-name' },
             { message: 'Pronto, certinho! Aprendeu a agendar.', target: "button[onclick=\"saveAppointment()\"]" },
         ];
