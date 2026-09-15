@@ -316,11 +316,14 @@
         let userDataInitialized = false;
 
         // Placeholders padrão que não devem se misturar com o texto digitado pelo usuário
-        const AUTO_CLEAR_DEFAULT_VALUES = ['Seu Nome', 'Profissional', 'Serviço 1', 'Serviço 2', '0'];
+        const AUTO_CLEAR_DEFAULT_VALUES = ['Seu Nome', 'Profissional', 'Serviço 1', 'Serviço 2', '0', '40'];
         document.addEventListener('focusin', e => {
             const el = e.target;
             if (!el.matches || !el.matches('input, textarea')) return;
-            if (AUTO_CLEAR_DEFAULT_VALUES.includes(el.value)) {
+            const isDefaultText = AUTO_CLEAR_DEFAULT_VALUES.includes(el.value);
+            // Campos de preço/valor renderizados com o atributo value="..." (ex: 100, 50) mantêm esse valor em defaultValue
+            const isDefaultNumber = el.type === 'number' && el.value !== '' && el.value === el.defaultValue;
+            if (isDefaultText || isDefaultNumber) {
                 el.dataset.autoClearedValue = el.value;
                 el.value = '';
             }
@@ -401,8 +404,7 @@
             { message: 'Diga seu nome!', target: '#cfg-name', enter: openConfig },
             { message: 'Qual sua profissão?', target: '#cfg-job' },
             { message: 'Qual serviço você presta? Fique tranquilo, você pode adicionar mais serviços depois.', target: '#services-config-container', enter: () => { onboardingServicePreview = true; openConfig(); } },
-            { message: 'Vamos aprender a agendar!', target: '#calendar-grid', enter: () => { onboardingServicePreview = false; closeConfig(); switchTab('calendar'); } },
-            { message: 'Agora escolha um dia do mês, ahn, vamos supor dia 15, clica nele.', target: () => [...document.querySelectorAll('.calendar-day')].find(day => day.textContent === '15'), waitForDay: true },
+            { message: 'Vamos aprender a agendar! Clique em qualquer dia do calendário para testar.', target: '#calendar-grid', waitForDay: true, enter: () => { onboardingServicePreview = false; closeConfig(); switchTab('calendar'); } },
             { message: 'Agora escreve o nome da cliente ou selecione o serviço. Você pode alterar o valor se quiser, escolha o horário e endereço se quiser.', target: '#modal-new' },
             { message: 'Pronto, certinho! Aprendeu a agendar.', target: "button[onclick=\"saveAppointment()\"]" },
         ];
