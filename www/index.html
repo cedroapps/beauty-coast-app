@@ -71,9 +71,9 @@
         .btn-inverse { background-color: var(--text-main); color: var(--bg-card); }
         .hidden { display: none !important; }
 
-        #onboarding-overlay { position: fixed; inset: 0; z-index: 120; pointer-events: none; }
-        #onboarding-backdrop { position: absolute; inset: 0; }
-        #onboarding-spotlight { position: fixed; border: 2px solid var(--accent); border-radius: 14px; box-shadow: 0 0 0 9999px rgba(0,0,0,.58), 0 0 24px rgba(212,175,55,.55); transition: all .2s ease; }
+        #onboarding-overlay { position: fixed; inset: 0; z-index: 120; pointer-events: auto; }
+        #onboarding-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.58); }
+        #onboarding-spotlight { position: fixed; border: 2px solid var(--accent); border-radius: 14px; box-shadow: 0 0 0 9999px rgba(0,0,0,.58), 0 0 24px rgba(212,175,55,.55); transition: all .2s ease; pointer-events: none; }
         #onboarding-card { position: fixed; width: min(320px, calc(100vw - 32px)); padding: 22px; border-radius: 26px; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-color); box-shadow: 0 18px 42px rgba(0,0,0,.32); pointer-events: auto; }
         #onboarding-card::before { content: ''; position: absolute; top: -9px; left: 28px; border-right: 9px solid transparent; border-bottom: 9px solid var(--bg-card); border-left: 9px solid transparent; }
         #onboarding-card p { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; line-height: 1.5; }
@@ -442,6 +442,10 @@
             onboardingServicePreview = false;
             localStorage.setItem('bc_onboarding_completed', 'true');
             document.getElementById('onboarding-overlay').classList.add('hidden');
+            const backdrop = document.getElementById('onboarding-backdrop');
+            const spotlight = document.getElementById('onboarding-spotlight');
+            if (backdrop) backdrop.style.background = 'rgba(0,0,0,.58)';
+            if (spotlight) spotlight.style.display = 'none';
         }
         window.startOnboarding = startOnboarding;
 

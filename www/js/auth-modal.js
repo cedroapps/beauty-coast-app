@@ -377,6 +377,7 @@ import { doc, collection, getDoc, getDocs, setDoc, writeBatch } from "https://ww
 
 const auth = getCurrentAuth() || getAuth();
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 let pendingGoogleCredential = null;
 
 onAuthStateChanged(auth, async user => {
