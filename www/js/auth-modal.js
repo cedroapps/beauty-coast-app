@@ -372,13 +372,31 @@ async function hydrateUserStore(user) {
 // ----------------------------------------------------------------
 // 7. Auth handlers — Integrado com Firebase Auth Real
 // ----------------------------------------------------------------
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signInWithCredential, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { doc, collection, getDoc, getDocs, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const auth = getCurrentAuth() || getAuth();
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 let pendingGoogleCredential = null;
+
+// signInWithPopup não funciona dentro da WebView nativa (Google bloqueia OAuth em user-agents embutidos)
+function isNativeApp() {
+    return Boolean(window.Capacitor && Capacitor.isNativePlatform());
+}
+
+if (isNativeApp()) {
+    Capacitor.Plugins.GoogleAuth?.initialize();
+}
+
+async function signInWithGoogleNative() {
+    const { GoogleAuth } = Capacitor.Plugins;
+    const googleUser = await GoogleAuth.signIn();
+    const idToken = googleUser?.authentication?.idToken;
+    if (!idToken) throw new Error('missing-google-id-token');
+    const credential = GoogleAuthProvider.credential(idToken);
+    await signInWithCredential(auth, credential);
+}
 
 onAuthStateChanged(auth, async user => {
     if (user) {
@@ -434,6 +452,10 @@ async function handleEmailRegister() {
 
 async function handleGoogleLogin() {
     try {
+        if (isNativeApp()) {
+            await signInWithGoogleNative();
+            return;
+        }
         await signInWithPopup(auth, googleProvider);
     } catch (err) {
         if (err.code === 'auth/account-exists-with-different-credential') {

@@ -1,5 +1,12 @@
 {
   "appId": "com.cedroapps.beautycoast",
   "appName": "beautycoastapp",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "SUBSTITUA_PELO_WEB_CLIENT_ID.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
 }
